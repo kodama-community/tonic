@@ -1,6 +1,6 @@
 # Changelog
 
-## MoonBit 0.6.0 / Rust 0.2.0 - 2026-10-02
+## Rust 0.2.0 - 2026-10-02
 
 ### Added
 
