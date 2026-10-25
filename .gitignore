@@ -1,4 +1,7 @@
-.DS_Store
 .local/
+.DS_Store
+
+/target
+Cargo.lock
+
 AGENTS.md
-/rust/target
