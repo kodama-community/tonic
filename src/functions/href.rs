@@ -55,7 +55,7 @@ fn href_handler(
             body: ord_argument(body),
         })
     } else {
-        Ok(body)
+        Ok(parser.unsupported_command(context.mode, &context.func_name, body))
     }
 }
 
@@ -94,6 +94,6 @@ fn url_handler(
             body: ord_argument(body.clone()),
         })
     } else {
-        Ok(body)
+        Ok(parser.unsupported_command(context.mode, &context.func_name, body))
     }
 }

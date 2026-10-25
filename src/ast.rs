@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::source_location::SourceLocation;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,6 +78,14 @@ pub enum ColumnSeparationType {
 #[derive(Debug, Clone, PartialEq)]
 /// A parsed node in the LaTeX AST.
 pub enum ParseNode {
+    /// A command rejected by the trust policy. HTML displays the command in
+    /// `color`; Unicode retains the established plain-text `fallback`.
+    Unsupported {
+        mode: Mode,
+        command: String,
+        color: String,
+        fallback: Box<ParseNode>,
+    },
     Internal {
         mode: Mode,
     },
@@ -282,7 +288,8 @@ pub enum ParseNode {
     },
     Html {
         mode: Mode,
-        attributes: HashMap<String, String>,
+        /// Attributes in insertion order, matching KaTeX's HTML serialization.
+        attributes: Vec<(String, String)>,
         body: Vec<ParseNode>,
     },
     IncludeGraphics {
@@ -403,7 +410,8 @@ impl ParseNode {
     /// Returns the [`Mode`] this node was parsed in.
     pub fn mode(&self) -> Mode {
         match self {
-            ParseNode::Internal { mode }
+            ParseNode::Unsupported { mode, .. }
+            | ParseNode::Internal { mode }
             | ParseNode::Raw { mode, .. }
             | ParseNode::ColorToken { mode, .. }
             | ParseNode::Size { mode, .. }

@@ -1,12 +1,12 @@
 use std::rc::Rc;
 
 use crate::anvil::{
-    SpacableItem, atom_family_name, cancel_bin_atoms, command_name, em_value, is_null_delimiter,
-    join_with_spacing, math_choice_variant, math_spacing, resolve_symbol,
+    atom_family_name, cancel_bin_atoms, command_name, em_value, is_null_delimiter,
+    join_with_spacing, math_choice_variant, math_spacing, resolve_symbol, SpacableItem,
 };
 use crate::ast::{ColumnSeparationType, Measurement, OperatorContent, ParseNode, StyleLevel};
 use crate::unicode::block::center_text;
-use crate::unicode::block::{Block, display_width};
+use crate::unicode::block::{display_width, Block};
 use crate::unicode::config::{LineStyle, RenderConfig, RenderState};
 use crate::unicode::unicode_array::{
     cell_block, render_array_block, render_array_inline, render_leftright_block,
@@ -16,7 +16,7 @@ use crate::unicode::unicode_frac::{
     barless_delimited_block, frac_block, render_genfrac_block, wrap_delims,
 };
 use crate::unicode_font::unicode_font_character;
-use crate::unicode_scripts::{UnicodeScriptKind, unicode_script_character};
+use crate::unicode_scripts::{unicode_script_character, UnicodeScriptKind};
 
 use super::atomic::is_atomic_expression;
 
@@ -77,6 +77,7 @@ fn item_to_block(item: &SpacableItem) -> Block {
 pub(crate) fn render_node_internal(node: &ParseNode, state: &RenderState) -> String {
     let slash = &state.config.fraction_slash;
     match node {
+        ParseNode::Unsupported { fallback, .. } => render_node_internal(fallback, state),
         ParseNode::Internal { .. } | ParseNode::EnvironmentEnd { .. } => String::new(),
         ParseNode::Raw { string, .. } => resolve_symbol(string),
         ParseNode::ColorToken { color, .. } => resolve_symbol(color),
@@ -371,6 +372,12 @@ fn collect_spacable_items(nodes: &[ParseNode], state: &RenderState) -> Vec<Spaca
     let mut acc: Vec<SpacableItem> = Vec::new();
     for n in nodes {
         match n {
+            ParseNode::Unsupported { fallback, .. } => {
+                acc.extend(collect_spacable_items(
+                    std::slice::from_ref(fallback.as_ref()),
+                    state,
+                ));
+            }
             ParseNode::Styling { body, style, .. } => {
                 let child_state = RenderState {
                     style: *style,
@@ -404,6 +411,7 @@ fn collect_spacable_items(nodes: &[ParseNode], state: &RenderState) -> Vec<Spaca
 
 fn get_outer_atom_type(node: &ParseNode) -> Option<String> {
     match node {
+        ParseNode::Unsupported { fallback, .. } => get_outer_atom_type(fallback),
         ParseNode::Atom { family, .. } => Some(atom_family_name(*family)),
         ParseNode::MathOrd { .. }
         | ParseNode::TextOrd { .. }
@@ -490,6 +498,7 @@ fn font_char_sequence(font: &str, node: &ParseNode) -> Option<String> {
 
 fn collect_font_chars(node: &ParseNode, chars: &mut Vec<String>) -> bool {
     match node {
+        ParseNode::Unsupported { fallback, .. } => collect_font_chars(fallback, chars),
         ParseNode::MathOrd { text, .. }
         | ParseNode::TextOrd { text, .. }
         | ParseNode::Atom { text, .. } => {
@@ -598,15 +607,13 @@ fn render_leftright_display_block(
     state: &RenderState,
 ) -> Block {
     match body {
-        [
-            ParseNode::Array {
-                body: arr_body,
-                columns,
-                hlines_before_row,
-                column_separation_type,
-                ..
-            },
-        ] => render_leftright_block(
+        [ParseNode::Array {
+            body: arr_body,
+            columns,
+            hlines_before_row,
+            column_separation_type,
+            ..
+        }] => render_leftright_block(
             &render_delimiter(left),
             &render_delimiter(right),
             arr_body,
@@ -882,6 +889,7 @@ fn render_operator_content_block(content: &OperatorContent, state: &RenderState)
 
 pub(crate) fn content_block(node: &ParseNode, state: &RenderState) -> Block {
     match node {
+        ParseNode::Unsupported { fallback, .. } => content_block(fallback, state),
         ParseNode::Styling { body, style, .. } => content_body_block(
             body,
             &RenderState {

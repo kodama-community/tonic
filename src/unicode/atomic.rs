@@ -6,6 +6,7 @@ use crate::ast::ParseNode;
 /// or uses self-delimiting function-application notation.
 pub(crate) fn is_atomic_expression(node: &ParseNode) -> bool {
     match node {
+        ParseNode::Unsupported { fallback, .. } => is_atomic_expression(fallback),
         // --- Single-token leaf nodes ---
         ParseNode::Raw { .. }
         | ParseNode::ColorToken { .. }

@@ -1,6 +1,6 @@
 //! A Rust port of the KaTeX parser: lexes and parses LaTeX math expressions
 //! with macro expansion into a typed [`ParseNode`] AST, and renders that AST
-//! to Unicode text.
+//! to Unicode text or, with the `html` feature, KaTeX-compatible HTML.
 //!
 //! The parser mirrors the MoonBit `katex-parser` package (itself a port of
 //! [KaTeX](https://katex.org)). Entry points:
@@ -22,6 +22,8 @@ mod environments;
 mod error;
 mod function_registry;
 mod functions;
+#[cfg(feature = "html")]
+pub mod html;
 mod lexer;
 mod macro_definition;
 mod macro_expander;
@@ -55,6 +57,8 @@ pub use function_registry::{
     ArgType, FunctionContext, FunctionHandler, FunctionParser, FunctionRegistry, FunctionSpec,
     build_function_registry,
 };
+#[cfg(feature = "html")]
+pub use html::{render as render_html, RenderConfig as HtmlRenderConfig};
 pub use macro_definition::{MacroDefinition, MacroExpansion};
 pub use parser::{parse, parse_with_specs};
 pub use settings::{

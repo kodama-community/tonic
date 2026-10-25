@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Optional, dependency-free `html` feature with `render_html` /
+  `HtmlRenderConfig` (also `html::render` / `html::RenderConfig`). The backend
+  follows dulox's HTML layout and targets KaTeX 0.19.0 `output: "html"`, including
+  fonts, SVG delimiters, accents, arrays, tags, trusted HTML, and layout options.
+
+### Fixed
+
+- Preserve HTML attribute insertion order and accept `{,}` in `\htmlData`.
+- Preserve rejected-command metadata for KaTeX-compatible HTML while retaining
+  the Unicode backend's existing text fallbacks.
+- Include KaTeX's text wrapper around unsupported commands when
+  `throw_on_error` is false.
+
+### API changes
+
+- `ParseNode::Html.attributes` is now `Vec<(String, String)>` instead of a
+  `HashMap`, because serialization order is part of the HTML contract. The
+  `TrustContext::HtmlData` callback still receives a `HashMap`.
+- Exhaustive `ParseNode` matches must handle the new `Unsupported` variant.
+  HTML uses its `command` and `color`; text backends should use `fallback`.
+- `FunctionParser::unsupported_command` has a default implementation. Custom
+  parsers can override it to supply their configured error color.
+
 ## Rust 0.2.0 - 2026-10-02
 
 ### Added

@@ -164,10 +164,14 @@ fn includegraphics_handler(
             src,
         })
     } else {
-        Ok(ParseNode::TextOrd {
-            mode: Mode::Text,
-            loc: None,
-            text: alt,
-        })
+        Ok(parser.unsupported_command(
+            context.mode,
+            &context.func_name,
+            ParseNode::TextOrd {
+                mode: Mode::Text,
+                loc: None,
+                text: alt,
+            },
+        ))
     }
 }

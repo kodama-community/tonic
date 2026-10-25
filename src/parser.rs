@@ -2,24 +2,24 @@ use std::rc::Rc;
 
 use crate::ast::{AtomFamily, ColumnSeparationType, Measurement, Mode, ParseNode, StyleLevel};
 use crate::environments::{
-    ArrayEnvironmentOptions, EnvironmentContext, EnvironmentParser, EnvironmentRegistry,
-    EnvironmentSpec, build_environment_registry, cd_row,
+    build_environment_registry, cd_row, ArrayEnvironmentOptions, EnvironmentContext,
+    EnvironmentParser, EnvironmentRegistry, EnvironmentSpec,
 };
 use crate::error::{Diagnostic, ParseError};
 use crate::function_registry::{
-    ArgType, FunctionContext, FunctionParser, FunctionRegistry, FunctionSpec,
-    build_function_registry,
+    build_function_registry, ArgType, FunctionContext, FunctionParser, FunctionRegistry,
+    FunctionSpec,
 };
 use crate::functions::{parse_size_measurement, size_scan_candidate, valid_size_unit};
 use crate::lexer::{is_ascii_alphabetic, starts_with_at};
 use crate::macro_definition::MacroDefinition;
-use crate::macro_expander::{ExternalCommandStatus, MacroExpander, is_implicit_command};
+use crate::macro_expander::{is_implicit_command, ExternalCommandStatus, MacroExpander};
 use crate::settings::{Settings, TrustContext};
 use crate::source_location::SourceLocation;
-use crate::symbol_registry::{SymbolGroup, SymbolSpec, is_registered_symbol, lookup_symbol};
+use crate::symbol_registry::{is_registered_symbol, lookup_symbol, SymbolGroup, SymbolSpec};
 use crate::text_ligature::form_text_ligatures;
 use crate::token::Token;
-use crate::unicode_scripts::{UnicodeScriptKind, lookup_unicode_script, supported_codepoint};
+use crate::unicode_scripts::{lookup_unicode_script, supported_codepoint, UnicodeScriptKind};
 use crate::unicode_symbols::{
     normalize_unicode_symbol, trailing_combining_mark_start, unicode_accent_command,
 };
@@ -481,7 +481,7 @@ impl Parser {
             self.consume();
             return Ok(Some(AtomResult::EmitAtom(format_unsupported_command(
                 self.mode,
-                &self.settings,
+                &self.settings.error_color,
                 &text,
             ))));
         }
@@ -1319,6 +1319,10 @@ impl FunctionParser for Parser {
         self.settings.is_trusted(context)
     }
 
+    fn unsupported_command(&self, mode: Mode, text: &str, fallback: ParseNode) -> ParseNode {
+        unsupported_command(mode, &self.settings.error_color, text, fallback)
+    }
+
     fn current_color(&self) -> Result<Option<String>, ParseError> {
         self.current_color()
     }
@@ -1701,7 +1705,7 @@ fn make_symbol_node(
     }
 }
 
-fn format_unsupported_command(mode: Mode, settings: &Settings, text: &str) -> ParseNode {
+pub(crate) fn format_unsupported_command(mode: Mode, error_color: &str, text: &str) -> ParseNode {
     let body: Vec<ParseNode> = text
         .chars()
         .map(|ch| ParseNode::TextOrd {
@@ -1712,8 +1716,26 @@ fn format_unsupported_command(mode: Mode, settings: &Settings, text: &str) -> Pa
         .collect();
     ParseNode::Color {
         mode,
-        color: settings.error_color.clone(),
-        body,
+        color: error_color.to_string(),
+        body: vec![ParseNode::Text {
+            mode,
+            font: String::new(),
+            body,
+        }],
+    }
+}
+
+pub(crate) fn unsupported_command(
+    mode: Mode,
+    color: &str,
+    command: &str,
+    fallback: ParseNode,
+) -> ParseNode {
+    ParseNode::Unsupported {
+        mode,
+        command: command.to_string(),
+        color: color.to_string(),
+        fallback: Box::new(fallback),
     }
 }
 

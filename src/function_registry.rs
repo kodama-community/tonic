@@ -4,7 +4,7 @@ use crate::ast::{Measurement, Mode, ParseNode};
 use crate::error::ParseError;
 use crate::macro_definition::MacroDefinition;
 use crate::settings::TrustContext;
-use crate::token::{Token, token_location};
+use crate::token::{token_location, Token};
 
 use crate::functions::*;
 
@@ -39,6 +39,11 @@ pub trait FunctionParser {
         token: Option<&Token>,
     ) -> bool;
     fn is_trusted(&self, context: TrustContext) -> bool;
+    /// Format a rejected command as KaTeX's colored text. Implementations with
+    /// a custom error color should override this method.
+    fn unsupported_command(&self, mode: Mode, text: &str, fallback: ParseNode) -> ParseNode {
+        crate::parser::unsupported_command(mode, "#cc0000", text, fallback)
+    }
     fn current_color(&self) -> Result<Option<String>, ParseError>;
     fn in_left_right(&self) -> bool;
     fn is_expandable(&self, name: &str) -> bool;

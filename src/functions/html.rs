@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::ast::ParseNode;
 use crate::error::ParseError;
 use crate::function_registry::{ArgType, FunctionContext, FunctionParser, FunctionSpec};
@@ -20,18 +18,39 @@ pub(crate) fn trim_ascii_spaces(text: &str) -> &str {
     &text[start..end]
 }
 
-fn html_data_attributes(value: &str) -> Result<HashMap<String, String>, ParseError> {
-    let mut attributes: HashMap<String, String> = HashMap::new();
-    for item in value.split(',') {
+fn html_data_attributes(value: &str) -> Result<Vec<(String, String)>, ParseError> {
+    let mut attributes: Vec<(String, String)> = Vec::new();
+    let mut items = vec![String::new()];
+    let mut remaining = value;
+    while !remaining.is_empty() {
+        if let Some(rest) = remaining.strip_prefix("{,}") {
+            items.last_mut().unwrap().push(',');
+            remaining = rest;
+        } else {
+            let ch = remaining.chars().next().unwrap();
+            if ch == ',' {
+                items.push(String::new());
+            } else {
+                items.last_mut().unwrap().push(ch);
+            }
+            remaining = &remaining[ch.len_utf8()..];
+        }
+    }
+    for item in items {
         let Some(equals) = item.find('=') else {
             return Err(ParseError::InvalidArgument {
                 message: format!("\\htmlData key/value '{item}' missing equals sign"),
                 loc: None,
             });
         };
-        let key = trim_ascii_spaces(&item[..equals]).to_string();
+        let key = item[..equals].trim_matches(|ch: char| ch.is_whitespace() || ch == '\u{feff}');
         let data_value = item[equals + 1..].to_string();
-        attributes.insert(format!("data-{key}"), data_value);
+        let key = format!("data-{key}");
+        if let Some((_, value)) = attributes.iter_mut().find(|(name, _)| *name == key) {
+            *value = data_value;
+        } else {
+            attributes.push((key, data_value));
+        }
     }
     Ok(attributes)
 }
@@ -71,27 +90,24 @@ fn html_handler(
         "HTML extension is disabled on strict mode",
         context.token.as_ref(),
     )?;
-    let mut attributes: HashMap<String, String> = HashMap::new();
+    let mut attributes: Vec<(String, String)> = Vec::new();
     let trust_context = match context.func_name.as_str() {
         "\\htmlClass" => {
-            attributes.insert("class".to_string(), value.clone());
+            attributes.push(("class".to_string(), value.clone()));
             TrustContext::HtmlClass { class: value }
         }
         "\\htmlId" => {
-            attributes.insert("id".to_string(), value.clone());
+            attributes.push(("id".to_string(), value.clone()));
             TrustContext::HtmlId { id: value }
         }
         "\\htmlStyle" => {
-            attributes.insert("style".to_string(), value.clone());
+            attributes.push(("style".to_string(), value.clone()));
             TrustContext::HtmlStyle { style: value }
         }
         "\\htmlData" => {
-            let parsed = html_data_attributes(&value)?;
-            for (key, item) in parsed {
-                attributes.insert(key, item);
-            }
+            attributes = html_data_attributes(&value)?;
             TrustContext::HtmlData {
-                attributes: attributes.clone(),
+                attributes: attributes.iter().cloned().collect(),
             }
         }
         _ => {
@@ -108,11 +124,15 @@ fn html_handler(
             body,
         })
     } else {
-        Ok(ParseNode::OrdGroup {
-            mode: context.mode,
-            loc: None,
-            body,
-            semisimple: false,
-        })
+        Ok(parser.unsupported_command(
+            context.mode,
+            &context.func_name,
+            ParseNode::OrdGroup {
+                mode: context.mode,
+                loc: None,
+                body,
+                semisimple: false,
+            },
+        ))
     }
 }
