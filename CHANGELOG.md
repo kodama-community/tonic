@@ -35,20 +35,20 @@
   argument, producing a `ReflectBox` AST node. The Unicode backends render the
   body without mirroring because plain text cannot mirror arbitrary glyphs.
   Both commands also appear in the MoonBit builtin completion catalogue.
-  ([#2](https://github.com/kokic/katex-parser/issues/2))
+  ([#2](https://github.com/kokic/tonic/issues/2))
 
 ### Fixed
 
 - Expand the current scoped `\arraystretch` macro and match KaTeX's numeric-prefix
   parsing, including signed infinity and exponent overflow/underflow. Explicit
   environment values such as `cases` and `smallmatrix` retain their fixed stretch.
-  ([#1](https://github.com/kokic/katex-parser/issues/1))
+  ([#1](https://github.com/kokic/tonic/issues/1))
 - Preserve the distinction between default column spacing and explicitly zero
-  spacing. ([#3](https://github.com/kokic/katex-parser/issues/3))
+  spacing. ([#3](https://github.com/kokic/tonic/issues/3))
 - Match KaTeX's trailing empty rows and per-row manual/automatic tags, including
   `\nonumber` and `\notag`. Keep CD's terminal structural empty row in the AST and
   omit it from Unicode text diagrams.
-  ([#4](https://github.com/kokic/katex-parser/issues/4))
+  ([#4](https://github.com/kokic/tonic/issues/4))
 
 ### Breaking changes
 

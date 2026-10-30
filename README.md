@@ -1,4 +1,4 @@
-# katex-parser
+# tonic
 
 A Rust port of the [KaTeX](https://katex.org) parser: lexes and parses LaTeX
 math expressions with full macro expansion into a typed [`ParseNode`] AST, and
@@ -54,4 +54,4 @@ let nodes = parse(r"\R", &mut settings)?; // \R is still defined
 
 AGPL-3.0. See [LICENSE](LICENSE).
 
-[`ParseNode`]: https://docs.rs/katex-parser/latest/katex_parser/enum.ParseNode.html
+[`ParseNode`]: https://docs.rs/tonic/latest/katex_parser/enum.ParseNode.html

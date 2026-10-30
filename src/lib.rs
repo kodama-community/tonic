@@ -1,14 +1,6 @@
 //! A Rust port of the KaTeX parser: lexes and parses LaTeX math expressions
 //! with macro expansion into a typed [`ParseNode`] AST, and renders that AST
 //! to Unicode text or, with the `html` feature, KaTeX-compatible HTML.
-//!
-//! The parser mirrors the MoonBit `katex-parser` package (itself a port of
-//! [KaTeX](https://katex.org)). Entry points:
-//!
-//! - [`parse`] / [`parse_with_specs`] — parse LaTeX into a `ParseNode` list.
-//! - [`render`] — render a parsed node list as Unicode text.
-//! - [`Settings`] — parser configuration (display mode, macros, strictness,
-//!   trust policy, and a persistent macro store).
 
 mod anvil;
 mod ast;
